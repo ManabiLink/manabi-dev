@@ -10,6 +10,7 @@ export default function ExpertApprovedListPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [selected, setSelected] = useState(null)
+  const [activeTab, setActiveTab] = useState('全て')
 
   const fetchItems = async () => {
     setLoading(true)
@@ -37,11 +38,36 @@ export default function ExpertApprovedListPage() {
   const approvedStatuses = new Set(['承認', 'approved', 'APPROVED'])
   const allowedStatuses = new Set(['許可', 'allowed', 'ALLOWED'])
 
-  // このページでは「未確認」を除外して表示する
-  const nonPending = items.filter((it) => String(it.status || '') !== '未確認')
-  const approved = nonPending.filter((it) => approvedStatuses.has(String(it.status)))
-  const allowed = nonPending.filter((it) => allowedStatuses.has(String(it.status)))
-  const others = nonPending.filter((it) => !approvedStatuses.has(String(it.status)) && !allowedStatuses.has(String(it.status)))
+  // タブ切替用のステータス集計
+  const all = items
+  const pending = items.filter((it) => String(it.status || '') === '未確認')
+  const approved = items.filter((it) => approvedStatuses.has(String(it.status)))
+  const allowed = items.filter((it) => allowedStatuses.has(String(it.status)))
+  const others = items.filter((it) => String(it.status || '') !== '未確認' && !approvedStatuses.has(String(it.status)) && !allowedStatuses.has(String(it.status)))
+
+  const tabs = [
+    { key: '全て', label: `全て (${all.length})` },
+    { key: '未確認', label: `未確認 (${pending.length})` },
+    { key: '承認', label: `承認 (${approved.length})` },
+    { key: '許可', label: `許可 (${allowed.length})` },
+    { key: 'その他', label: `その他 (${others.length})` },
+  ]
+
+  const itemsForActiveTab = () => {
+    switch (activeTab) {
+      case '未確認':
+        return pending
+      case '承認':
+        return approved
+      case '許可':
+        return allowed
+      case 'その他':
+        return others
+      case '全て':
+      default:
+        return all
+    }
+  }
 
   const hideKeys = new Set(['id', 'pic', 'picture', 'avatar'])
   const labelMap = {
@@ -88,53 +114,35 @@ export default function ExpertApprovedListPage() {
       {loading && <p>読み込み中…</p>}
       {error && <p className="error">{error}</p>}
 
-      <div className="lists">
-        <section className="panel">
-          <h3>承認済み <small>({approved.length})</small></h3>
-          {approved.length === 0 ? (
-            <p>承認済みの申請はありません。</p>
-          ) : (
-            <ul className="list">
-              {approved.map((it) => (
-                <li key={it.id || JSON.stringify(it)} className="item">
-                  <div className="left">{renderSummary(it)}</div>
-                  <div className="right">{String(it.status)}</div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
+      <div className="tabs">
+        {tabs.map((t) => (
+          <button
+            key={t.key}
+            className={`tab-btn ${activeTab === t.key ? 'active' : ''}`}
+            onClick={() => setActiveTab(t.key)}
+            type="button"
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
 
-        <section className="panel">
-          <h3>許可済み <small>({allowed.length})</small></h3>
-          {allowed.length === 0 ? (
-            <p>許可済みの申請はありません。</p>
-          ) : (
-            <ul className="list">
-              {allowed.map((it) => (
-                <li key={it.id || JSON.stringify(it)} className="item">
-                  <div className="left">{renderSummary(it)}</div>
-                  <div className="right">{String(it.status)}</div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-        <section className="panel">
-          <h3>その他 <small>({others.length})</small></h3>
-          {others.length === 0 ? (
-            <p>該当する申請はありません。</p>
-          ) : (
-            <ul className="list">
-              {others.map((it) => (
-                <li key={it.id || JSON.stringify(it)} className="item">
-                  <div className="left">{renderSummary(it)}</div>
-                  <div className="right">{String(it.status)}</div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
+      <div className="lists">
+      <section className="panel full-panel">
+        <h3>{activeTab} <small>({itemsForActiveTab().length})</small></h3>
+        {itemsForActiveTab().length === 0 ? (
+          <p>該当する申請はありません。</p>
+        ) : (
+          <ul className="list">
+            {itemsForActiveTab().map((it) => (
+              <li key={it.id || JSON.stringify(it)} className="item">
+                <div className="left">{renderSummary(it)}</div>
+                <div className="right">{String(it.status)}</div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
       </div>
 
       {selected && (
@@ -162,6 +170,10 @@ export default function ExpertApprovedListPage() {
         .error { color: #c00 }
         .lists { display: flex; gap: 16px; align-items: flex-start }
         .panel { flex: 1; border: 1px solid #eee; padding: 12px; border-radius: 8px; background: #fff }
+        .full-panel { inline-size: 100% }
+        .tabs { display:flex; gap:8px; margin-block-end:12px; flex-wrap:wrap }
+        .tab-btn { background:transparent; border:1px solid #e6e6e6; padding:6px 10px; border-radius:6px; cursor:pointer }
+        .tab-btn.active { background:#0066cc; color:#fff; border-color: #0066cc }
         .panel h3 { margin: 0 0 8px 0; font-size: 16px }
         .list { list-style: none; padding: 0; margin: 0 }
         .item { display:flex; justify-content:space-between; padding: 8px 6px; border-block-end: 1px solid #f3f3f3 }
