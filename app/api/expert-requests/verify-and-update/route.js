@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 
-const SUPABASE_URL = process.env.NEXT_SUPABASE_URL || process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL
+const SUPABASE_URL = process.env.NEXT_SUPABASE_URL ||  process.env.NEXT_PUBLIC_SUPABASE_URL
 const SUPABASE_SERVICE_ROLE_KEY =
   process.env.NEXT_SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY
 
@@ -63,8 +63,8 @@ export async function POST(request) {
       return new Response(JSON.stringify(data), { status: 200 })
     }
 
-    // Otherwise check public.dev_account table for operatorEmail
-    const { data: devs, error: devError } = await supabase.from('public.dev_account').select('mail').eq('mail', operatorEmail).limit(1)
+    // Otherwise check dev_account table for operatorEmail
+    const { data: devs, error: devError } = await supabase.from('dev_account').select('mail').eq('mail', operatorEmail).limit(1)
     if (devError) return new Response(JSON.stringify({ error: devError.message }), { status: 500 })
     if (!devs || devs.length === 0) {
       return new Response(JSON.stringify({ error: 'Operator not allowed' }), { status: 403 })
