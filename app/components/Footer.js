@@ -8,6 +8,9 @@ export default function Footer() {
       <style jsx>{`
         .site-footer { border-block-start: 1px solid #eee; background:#fff; margin-block-start:24px }
         .inner { max-inline-size:1100px; margin-inline:auto; padding:12px 18px; color:#666 }
+        @media (max-inline-size: 720px) {
+          .inner { padding: 8px 12px; text-align: center }
+        }
       `}</style>
     </footer>
   )
