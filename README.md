@@ -1,4 +1,5 @@
 # manabi-dev
+
 manabi-dev is a development environment for the manabi learning management system (LMS). It provides tools and configurations to facilitate the development, testing, and deployment of manabi LMS.
 
 ## Authors
