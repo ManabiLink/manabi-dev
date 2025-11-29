@@ -37,6 +37,9 @@ export default function ExpertCheckPage() {
         fetchItems()
     }, [])
 
+    // 表示用フィルタ: 未確認 のみをこのページで表示
+    const visibleItems = items.filter((it) => String(it.status || '') === '未確認')
+
     const updateStatus = async (id, status) => {
         if (!confirm(`ID ${id} のステータスを「${status}」に変更しますか？`)) return
 
@@ -104,10 +107,10 @@ export default function ExpertCheckPage() {
             <h1>専門家申請の承認</h1>
             {loading && <p>読み込み中…</p>}
             {error && <p className="error">{error}</p>}
-            {!loading && items.length === 0 && <p>申請はありません。</p>}
+            {!loading && visibleItems.length === 0 && <p>申請はありません。</p>}
 
             {/* デスクトップ: テーブル表示 */}
-            {items.length > 0 && (
+            {visibleItems.length > 0 && (
                 <table className="desktop-table">
                     <thead>
                         <tr>
@@ -117,7 +120,7 @@ export default function ExpertCheckPage() {
                         </tr>
                     </thead>
                     <tbody>
-                        {items.map((item) => (
+                        {visibleItems.map((item) => (
                             <tr key={item.id || JSON.stringify(item)}>
                                 <td className="cell-info">
                                     {(() => {
@@ -186,9 +189,9 @@ export default function ExpertCheckPage() {
             )}
 
             {/* モバイル: カード表示 */}
-            {items.length > 0 && (
+            {visibleItems.length > 0 && (
                 <div className="card-list">
-                    {items.map((item) => (
+                    {visibleItems.map((item) => (
                         <div className="card" key={item.id || JSON.stringify(item)}>
                             <div className="card-info">
                                 {(() => {

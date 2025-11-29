@@ -37,8 +37,11 @@ export default function ExpertApprovedListPage() {
   const approvedStatuses = new Set(['承認', 'approved', 'APPROVED'])
   const allowedStatuses = new Set(['許可', 'allowed', 'ALLOWED'])
 
-  const approved = items.filter((it) => approvedStatuses.has(String(it.status)))
-  const allowed = items.filter((it) => allowedStatuses.has(String(it.status)))
+  // このページでは「未確認」を除外して表示する
+  const nonPending = items.filter((it) => String(it.status || '') !== '未確認')
+  const approved = nonPending.filter((it) => approvedStatuses.has(String(it.status)))
+  const allowed = nonPending.filter((it) => allowedStatuses.has(String(it.status)))
+  const others = nonPending.filter((it) => !approvedStatuses.has(String(it.status)) && !allowedStatuses.has(String(it.status)))
 
   const hideKeys = new Set(['id', 'pic', 'picture', 'avatar'])
   const labelMap = {
@@ -109,6 +112,21 @@ export default function ExpertApprovedListPage() {
           ) : (
             <ul className="list">
               {allowed.map((it) => (
+                <li key={it.id || JSON.stringify(it)} className="item">
+                  <div className="left">{renderSummary(it)}</div>
+                  <div className="right">{String(it.status)}</div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+        <section className="panel">
+          <h3>その他 <small>({others.length})</small></h3>
+          {others.length === 0 ? (
+            <p>該当する申請はありません。</p>
+          ) : (
+            <ul className="list">
+              {others.map((it) => (
                 <li key={it.id || JSON.stringify(it)} className="item">
                   <div className="left">{renderSummary(it)}</div>
                   <div className="right">{String(it.status)}</div>
