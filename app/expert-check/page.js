@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useEffect, useState } from 'react'
+import supabase from '@/app/lib/supabase'
 
 // 専門家の承認フローの確認画面
 // 表示: `expert_requests` テーブルの全データを一覧表示し、承認/却下で status を更新
@@ -38,18 +39,61 @@ export default function ExpertCheckPage() {
 
     const updateStatus = async (id, status) => {
         if (!confirm(`ID ${id} のステータスを「${status}」に変更しますか？`)) return
+
+        // get current operator email
+        const { data: userData } = await supabase.auth.getUser()
+        const operatorEmail = userData?.user?.email
+
         try {
-            const res = await fetch('/api/expert-requests', {
-                method: 'PATCH',
+            const res = await fetch('/api/expert-requests/verify-and-update', {
+                method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id, status }),
+                body: JSON.stringify({ id, status, operatorEmail }),
             })
+
+            const body = await res.json().catch(() => ({}))
             if (!res.ok) {
-                const errBody = await res.json().catch(() => null)
-                throw new Error(errBody?.error || `更新に失敗しました (status ${res.status})`)
+                throw new Error(body?.error || `更新に失敗しました (status ${res.status})`)
             }
-            const updated = await res.json()
+
+            if (body?.needsDevCredentials) {
+                // show modal to collect developer email/password
+                setPending({ id, status, operatorEmail })
+                setShowDevModal(true)
+                return
+            }
+
+            // updated row returned
+            const updated = body
             setItems((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
+        } catch (err) {
+            alert(err.message)
+        }
+    }
+
+    // Dev modal states
+    const [showDevModal, setShowDevModal] = useState(false)
+    const [devEmail, setDevEmail] = useState('')
+    const [devPassword, setDevPassword] = useState('')
+    const [pending, setPending] = useState(null)
+
+    const submitDevCredentials = async () => {
+        if (!pending) return
+        try {
+            const res = await fetch('/api/expert-requests/verify-and-update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: pending.id, status: pending.status, operatorEmail: pending.operatorEmail, devEmail, devPassword }),
+            })
+
+            const body = await res.json().catch(() => ({}))
+            if (!res.ok) throw new Error(body?.error || '認証に失敗しました')
+            const updated = body
+            setItems((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
+            setShowDevModal(false)
+            setDevEmail('')
+            setDevPassword('')
+            setPending(null)
         } catch (err) {
             alert(err.message)
         }
@@ -224,12 +268,42 @@ export default function ExpertCheckPage() {
                 .card-footer { display:flex; justify-content:space-between; align-items:center; margin-block-start:8px }
                 .card-actions { display:flex; gap:8px }
 
+                /* modal */
+                .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display:flex; align-items:center; justify-content:center; z-index:1000 }
+                .modal { background: #fff; padding: 18px; border-radius: 8px; inline-size: min(560px, 96%); box-shadow: 0 8px 24px rgba(0,0,0,0.2) }
+                .modal h2 { margin: 0 0 8px 0 }
+                .modal p { margin: 0 0 12px 0; color: #444 }
+                .modal label { display:block; margin-block-end:8px }
+                .modal input { inline-size: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px }
+                .modal-actions { display:flex; justify-content:flex-end; gap:8px; margin-block-start:12px }
+
                 @media (max-inline-size: 640px) {
                     /* hide table, show cards */
                     table { display: none }
                     .card-list { display: block }
                 }
             `}</style>
+
+            {showDevModal && (
+                <div className="modal-overlay" role="dialog" aria-modal="true">
+                    <div className="modal">
+                        <h2>開発者認証が必要です</h2>
+                        <p>操作を完了するために開発者のメールとパスワードを入力してください。</p>
+                        <label>
+                            メール
+                            <input type="email" value={devEmail} onChange={(e) => setDevEmail(e.target.value)} />
+                        </label>
+                        <label>
+                            パスワード
+                            <input type="password" value={devPassword} onChange={(e) => setDevPassword(e.target.value)} />
+                        </label>
+                        <div className="modal-actions">
+                            <button onClick={() => { setShowDevModal(false); setDevEmail(''); setDevPassword(''); setPending(null); }}>キャンセル</button>
+                            <button onClick={submitDevCredentials}>送信</button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

@@ -1,8 +1,9 @@
 import { createClient } from "@supabase/supabase-js";
 
-const supabaseClient = createClient(
+// Server-side Supabase client. Use the service role key for privileged operations.
+const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY
 );
 
-export default supabaseClient;
+export default supabase;
