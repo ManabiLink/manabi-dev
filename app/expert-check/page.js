@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 import supabase from '@/app/lib/supabase'
+import { useRouter } from 'next/navigation'
 
 // 専門家の承認フローの確認画面
 // 表示: `expert_requests` テーブルの全データを一覧表示し、承認/却下で status を更新
@@ -13,6 +14,7 @@ export default function ExpertCheckPage() {
     const [items, setItems] = useState([])
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState(null)
+    const router = useRouter()
 
     const fetchItems = async () => {
         setLoading(true)
@@ -104,7 +106,12 @@ export default function ExpertCheckPage() {
 
     return (
         <div className="container">
-            <h1>専門家申請の承認</h1>
+            <div className="header header-flex  " style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <h1>専門家申請の承認</h1>
+                {/* /expert-check/list へのボタン */}
+                <button onClick={() => { router.push('/expert-check/list') }}>一覧ページへ</button>
+            </div>
+
             {loading && <p>読み込み中…</p>}
             {error && <p className="error">{error}</p>}
             {!loading && visibleItems.length === 0 && <p>申請はありません。</p>}
